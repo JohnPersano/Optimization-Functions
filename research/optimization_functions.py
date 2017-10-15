@@ -45,8 +45,6 @@ class CustomFunction(OptimizationFunction):
     pass
 
 
-
-
 class Beale(OptimizationFunction):
     """
     Beale function.
@@ -338,6 +336,48 @@ class Rastrigin(OptimizationFunction):
         return 2.56, 5.12
 
 
+class MisplacedRastrigin(OptimizationFunction):
+    """
+    Rastrigin function.
+
+    Type:           Multimodal
+    Dimensions:     n
+    Global minimum: 0 at (-15, ..., -15)
+    Domain          [0, 20]
+    Reference:      Custom
+    """
+
+    def __init__(self, dimensions=2):
+        super(MisplacedRastrigin, self).__init__()
+        self.dimensions = dimensions
+
+    @staticmethod
+    def get_tensorflow_function(data):
+        fifteen_constant = tf.constant(15, dtype=tf.float64)
+        added_data = tf.add(data, fifteen_constant)
+        pi_parameter = tf.constant(math.pi, dtype=tf.float64)
+        cosine_parameter = tf.multiply(tf.multiply(tf.constant(2, dtype=tf.float64), pi_parameter), added_data)
+        cosine_term = tf.multiply(tf.constant(10, dtype=tf.float64), tf.cos(cosine_parameter))
+        summation_term = tf.subtract(tf.square(added_data), cosine_term)
+        return tf.reduce_sum(tf.add(summation_term, 10))
+
+    @staticmethod
+    def get_numpy_function(vector):
+        summation = 0
+        for item in vector:
+            summation += (item - 15) ** 2 - 10 * math.cos(2 * math.pi * (item - 15)) + 10
+        return summation
+
+    @staticmethod
+    def get_symmetric_domain():
+        return 0, 20
+
+    @staticmethod
+    def get_asymmetric_domain():
+        return 17.5, 20
+
+
+
 class Rosenbrock(OptimizationFunction):
     """
     Rosenbrock function.
@@ -430,11 +470,11 @@ class Sphere(OptimizationFunction):
 
     @staticmethod
     def get_symmetric_domain():
-        return -5.12, 5.12
+        return -10, 10
 
     @staticmethod
     def get_asymmetric_domain():
-        return 2.56, 5.12
+        return 5, 10
 
 
 class StyblinskiTang(OptimizationFunction):

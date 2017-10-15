@@ -8,15 +8,16 @@ Commit history:
 """
 
 
+import matplotlib.pyplot as plt
+
 from algorithms.gpo.gpo import GPO
 
-import matplotlib.pyplot as plt
-plt.rcParams["figure.figsize"] = (20, 20)
+plt.rcParams["figure.figsize"] = (15, 15)
 
 import numpy as np
 from matplotlib import cm
-from optimization_functions import OptimizationFunction
-
+from research.optimization_functions import OptimizationFunction
+from mpl_toolkits.mplot3d import axes3d, Axes3D
 
 class ParameterVisualizer:
     """

@@ -10,11 +10,11 @@ from enum import Enum
 
 import tensorflow as tf
 
-from optimization_functions import OptimizationFunction
+from research.optimization_functions import OptimizationFunction
 from utility.benchmark import Benchmark
+from utility.convergence_visualizer import ConvergenceVisualizer
 from utility.log import Log
 from utility.report import Report
-from utility.convergence_visualizer import ConvergenceVisualizer
 
 
 class GradientDescent:
@@ -121,6 +121,8 @@ class GradientDescent:
                 Log.info("Using CPU for optimization")
             device = "/cpu:0"
 
+        tf.reset_default_graph()
+
         # Use the appropriate hardware
         with tf.device(device):
 
@@ -128,18 +130,22 @@ class GradientDescent:
             position = tf.Variable(tf.random_uniform([self._function_class.dimensions],
                                                      self.spawn_range[0], self.spawn_range[1], dtype=tf.float64))
 
+            best_result = tf.Variable(99999999, dtype=tf.float64)
+
             # Use the Tensorflow variant as the cost function
             cost_function = self._function_class.get_tensorflow_function
 
             # Calculate the result of the current position vector
             result = cost_function(position)
+            result_condition = tf.less(result, best_result)
+            compare = tf.cond(result_condition, lambda: best_result.assign(result), lambda: best_result.assign(best_result))
 
             # Use the native Tensorflow Gradient Descent
             optimizer = tf.train.GradientDescentOptimizer(self.learning_rate)
             train = optimizer.minimize(result)
 
             # Return the best result, the best particle, and the particle matrix
-            optimization_result = (cost_function(position), position, result, train)
+            optimization_result = (best_result, position, best_result, train, compare)
 
         # Create a new Tensorflow session
         with tf.Session() as session:

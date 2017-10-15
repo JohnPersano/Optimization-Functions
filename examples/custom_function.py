@@ -11,7 +11,7 @@ import tensorflow as tf
 from algorithms.depreciated.gpo1 import GPO
 from algorithms.gd.gd import GradientDescent
 from algorithms.pso.np_pso import PSO
-from optimization_functions import CustomFunction
+from research.optimization_functions import CustomFunction
 
 
 def custom_tf_function(data):

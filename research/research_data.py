@@ -186,7 +186,7 @@ class ResearchData:
 
         self.use_gpo = self._handle_gpo_parameters(kwargs)
         self.use_pso = self._handle_pso_parameters(kwargs)
-        self.use_gde = False
+        self.use_gde = True
 
         # No function parameters were specified or they were all incorrect
         if not self.use_gpo and not self.use_pso and not self.use_gde:
@@ -213,6 +213,7 @@ class ResearchData:
 
         gpo_csv_tuples = []
         pso_csv_tuples = []
+        gd_csv_tuples = []
 
         def run_gpo(output_file):
 
@@ -254,6 +255,7 @@ class ResearchData:
                 "\t\tConstants: \n\t\t\tGradient: {}\n\t\t\tSocial: {} \n\t".format(self.gpo_constants[0],
                                                                                 self.gpo_constants[1]))
             output_file.write("\t\tInertia: {}\n".format(self.gpo_inertia))
+            output_file.write("\t\tPopulation: {}\n".format(self.gpo_population))
             output_file.write("\t\tAverage result: {}\n".format(average_result / self.sample_size))
             output_file.write("\t\tAverage runtime: {}\n".format(average_runtime / self.sample_size))
             output_file.write("\t\tIterative result average:\n")
@@ -301,12 +303,56 @@ class ResearchData:
             output_file.write("\t\tConstants: (Cognitive: {}, Social: {})\n".format(self.pso_constants[0],
                                                                                     self.pso_constants[1]))
             output_file.write("\t\tInertia: {}\n".format(self.pso_inertia))
+            output_file.write("\t\tPopulation: {}\n".format(self.pso_swarm))
             output_file.write("\t\tAverage result: {}\n".format(result_tally / self.sample_size))
             output_file.write("\t\tAverage runtime: {}\n".format(runtime / self.sample_size))
             output_file.write("\t\tIterative result average:\n")
 
             for i in range(0, len(average_iterative_sample)):
                 pso_csv_tuples.append((average_iterative_sample[i], average_iterative_result[i]))
+                output_file.write("\t\t\tIteration: {}, Result: {}\n".format(average_iterative_sample[i],
+                                                                               average_iterative_result[i]))
+            output_file.write("\t\tAverage function calls: {}\n".format(function_calls / self.sample_size))
+
+        def run_gde(output_file):
+
+            result_tally = 0
+            best_point = []
+            runtime = 0
+            iterative_result_samples = []
+            iterative_result_values = []
+            function_calls = 0
+            for pso_run in range(0, self.sample_size):
+                Log.warning("GDE iteration: {} out of {}".format(pso_run + 1, self.sample_size))
+
+                hardware = GradientDescent.Hardware.CPU
+                if self.gpu:
+                    hardware = GradientDescent.Hardware.GPU_2
+
+                report = GradientDescent(epochs=self.epochs,
+                                         spawn_range=self.spawn_range,
+                                         learning_rate=0.04,
+                                         hardware=hardware).optimize(self.cost_function)
+
+                result_tally += report.best_result
+                best_point.append(report.best_parameters.copy())
+                runtime += report.runtime
+                iterative_result_samples.append([i[0] for i in report.iterative_results].copy())
+                iterative_result_values.append([i[1] for i in report.iterative_results].copy())
+                function_calls += report.function_calls
+
+            average_iterative_sample = np.mean(np.array(iterative_result_samples), axis=0)
+            average_iterative_result = np.mean(np.array(iterative_result_values), axis=0)
+
+            # Write the run number to the file
+            output_file.write("\tGradient Descent Optimization run\n")
+            output_file.write("\t\tConstants: Learning Rate: 0.07 \n")
+            output_file.write("\t\tAverage result: {}\n".format(result_tally / self.sample_size))
+            output_file.write("\t\tAverage runtime: {}\n".format(runtime / self.sample_size))
+            output_file.write("\t\tIterative result average:\n")
+
+            for i in range(0, len(average_iterative_sample)):
+                gd_csv_tuples.append((average_iterative_sample[i], average_iterative_result[i]))
                 output_file.write("\t\t\tIteration: {}, Result: {}\n".format(average_iterative_sample[i],
                                                                                average_iterative_result[i]))
             output_file.write("\t\tAverage function calls: {}\n".format(function_calls / self.sample_size))
@@ -330,9 +376,14 @@ class ResearchData:
         if self.use_pso:
             run_pso(output_file)
 
-        csv_table = open(os.path.join(self.folder_name, "Result_Table.dat"), "w")
-        csv_writer = csv.writer(csv_table, delimiter=',')
+        if self.use_gde:
+            run_gde(output_file)
 
+        csv_table = open(os.path.join(self.folder_name, "Result_Table.csv"), "w")
+        csv_writer = csv.writer(csv_table, delimiter=',')
+        csv_writer.writerow(['Iterations', 'GPO', 'PSO', 'GDE'])
+
+        # X-axis is iteration, Y is result
         gpo_x = []
         gpo_y = []
 
@@ -343,29 +394,33 @@ class ResearchData:
         gd_y = []
 
         for i in range(0, len(gpo_csv_tuples)):
-            gpo_x.append(gpo_csv_tuples[i][0])
-            gpo_y.append(gpo_csv_tuples[i][1])
+
+            csv_write_list = []
+
+            if self.use_gpo:
+                gpo_x.append(gpo_csv_tuples[i][0])
+                gpo_y.append(gpo_csv_tuples[i][1])
+                csv_write_list.extend([gpo_csv_tuples[i][0], gpo_csv_tuples[i][1]])
 
             if self.use_pso:
                 pso_x.append(pso_csv_tuples[i][0])
                 pso_y.append(pso_csv_tuples[i][1])
+                csv_write_list.extend([pso_csv_tuples[i][1]])
 
             if self.use_gde:
                 gd_x.append(gd_csv_tuples[i][0])
                 gd_y.append(gd_csv_tuples[i][1])
+                csv_write_list.extend([gd_csv_tuples[i][1]])
 
-            # csv_writer.writerow(
-            #     [gpo_csv_tuples[i][0], gpo_csv_tuples[i][1],
-            #      pso_csv_tuples[i][0], pso_csv_tuples[i][1],
-            #      gd_csv_tuples[i][0], gd_csv_tuples[i][1]])
-
+            # Writes CSV sheet in the following 'Iteration, GPO, PSO, GDE'. Assumes each iteration report is the same!
+            csv_writer.writerow(csv_write_list)
         csv_table.close()
 
         # Plot and save the convergence graph
-        all_y = sorted(gpo_y + pso_y)
+        all_y = sorted(gpo_y + pso_y + gd_y)
         max_y = all_y[-1] + (all_y[-1] * .1)
 
-        plt.axis([gpo_x[0], gpo_x[-1], 0, max_y])
+        plt.axis([gpo_x[0], gpo_x[-1], -0.1, max_y])
 
         if self.use_gpo:
             plt.plot(gpo_x, gpo_y, '-b', label="GPO")

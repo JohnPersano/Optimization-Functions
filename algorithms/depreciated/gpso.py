@@ -7,16 +7,18 @@ Commit history:
                 - 04/22/2017 - Initial version
 """
 
-import tensorflow as tf
 from enum import Enum
-from optimization_functions import OptimizationFunction
+
+import tensorflow as tf
+
+from research.optimization_functions import OptimizationFunction
 from utility.benchmark import Benchmark
 from utility.convergence_visualizer import ConvergenceVisualizer
 from utility.log import Log
 from utility.report import Report
 
 
-class GPSO:
+class GPODEP:
     """
     Gradient Particle Swarm Optimization.    
     """

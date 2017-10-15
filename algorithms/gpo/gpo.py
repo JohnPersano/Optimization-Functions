@@ -12,13 +12,14 @@ Commit history:
 """
 
 from enum import Enum
+
 import tensorflow as tf
-from optimization_functions import OptimizationFunction
+
+from research.optimization_functions import OptimizationFunction
 from utility.benchmark import Benchmark
 from utility.convergence_visualizer import ConvergenceVisualizer
 from utility.log import Log
 from utility.report import Report
-import numpy as np
 
 
 # noinspection PyUnresolvedReferences
@@ -40,7 +41,7 @@ class GPO:
 
     def __init__(self,
                  epochs: int = 1000,
-                 population_size: int = 36,
+                 population_size: int = 20,
                  spawn_range: tuple = (-100, 100),
                  gradient_constant: float = 2,
                  social_constant: float = 2,
@@ -114,7 +115,7 @@ class GPO:
                           Benchmark.ERROR_CODE)
 
         # No issues have occurred with the benchmark, show the full report
-        return Report("GPO V2", self.hardware.name, self._function_class.get_name(), self._global_best_result,
+        return Report("GPO", self.hardware.name, self._function_class.get_name(), self._global_best_result,
                       self._global_best_position, self.iterative_results, benchmark_results.runtime,
                       benchmark_results.function_calls)
 
@@ -141,6 +142,8 @@ class GPO:
             if self.verbose:
                 Log.info("Using CPU for optimization")
             device = "/cpu:0"
+
+        tf.reset_default_graph()
 
         # Use the appropriate hardware with Tensorflow
         with tf.device(device):
@@ -263,7 +266,7 @@ class GPO:
 
                 # Update the graph if the plot flag is True
                 if self.plot:
-                    graph.update_convergence_visualizer(result)
+                    graph.update_convergence_visualizer(result, (i, self.epochs))
 
                 # Capture iterative data
                 if (i + 1) % (iterative_scalar * self.report_frequency) == 0:
@@ -275,3 +278,4 @@ class GPO:
 
             if self.verbose:
                 writer.close()
+

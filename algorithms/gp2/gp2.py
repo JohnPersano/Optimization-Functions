@@ -1,17 +1,9 @@
-import cProfile
-import io
-import os
-import pstats
-import re
-
 import numpy as np
-from matplotlib import pyplot as plt
-
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C, Matern
+from sklearn.gaussian_process.kernels import Matern
 
 from algorithms.gpo.gpo import GPO
-from optimization_functions import Sphere, Rastrigin
+from research.optimization_functions import Rastrigin
 
 np.random.seed(1)
 

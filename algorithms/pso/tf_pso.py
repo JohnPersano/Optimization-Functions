@@ -8,8 +8,10 @@ Commit history:
 """
 
 from enum import Enum
+
 import tensorflow as tf
-from optimization_functions import OptimizationFunction
+
+from research.optimization_functions import OptimizationFunction
 from utility.benchmark import Benchmark
 from utility.convergence_visualizer import ConvergenceVisualizer
 from utility.log import Log
@@ -41,6 +43,7 @@ class TFPSO:
                  inertia: tuple = (0.9, 0.4),
                  hardware: Hardware = Hardware.CPU,
                  report_frequency: int = 25,
+                 img_save: list = [],
                  verbose: bool = False,
                  plot: bool = False):
         """
@@ -61,8 +64,8 @@ class TFPSO:
         self.epochs = epochs
         self.swarm_size = swarm_size
         self.spawn_range = spawn_range
-        self.social_constant = constants[0]
-        self.cognitive_constant = constants[1]
+        self.cognitive_constant = constants[0]
+        self.social_constant = constants[1]
         self.velocity_max = velocity_max
         self.inertia = inertia[0] if type(inertia) == tuple else inertia
         self.inertia_step = (inertia[0] - inertia[1]) / epochs if type(inertia) == tuple else 0
@@ -70,6 +73,7 @@ class TFPSO:
 
         # Initialize non-functional class variables
         self.report_frequency = report_frequency
+        self.img_save = img_save
         self.verbose = verbose
         self.plot = plot
 
@@ -131,6 +135,8 @@ class TFPSO:
             if self.verbose:
                 Log.info("Using CPU for optimization")
             device = "/cpu:0"
+
+        tf.reset_default_graph()
 
         # Use the appropriate hardware with Tensorflow
         with tf.device(device):
@@ -244,10 +250,8 @@ class TFPSO:
             if self.verbose:
                 writer = tf.summary.FileWriter("output/tensorboard", session.graph)
 
-            # Graph the optimization if the plot flag is True
-            graph = None
-            if self.plot:
-                graph = ConvergenceVisualizer(self._function_class)
+            # Graph the optimization
+            graph = ConvergenceVisualizer(self._function_class)
 
             # Iterate through the max number of epochs
             result = None
@@ -263,8 +267,11 @@ class TFPSO:
                 # Log.error(result[4])
 
                 # Update the graph if the plot flag is True
-                if self.plot:
-                    graph.update_convergence_visualizer(result)
+                if self.plot and (i + 1) % (iterative_scalar * self.report_frequency) == 0:
+                    graph.update_convergence_visualizer(result, (i, self.epochs))
+
+                if (i+1) in self.img_save:
+                    graph.save_convergence_image(result, (i + 1, self.epochs), "{:.2f}".format(result[0]))
 
                 # Capture iterative data
                 if (i + 1) % (iterative_scalar * self.report_frequency) == 0:

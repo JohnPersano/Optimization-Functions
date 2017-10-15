@@ -9,7 +9,7 @@ Commit history:
 from algorithms.depreciated.gpo1 import GPO
 from algorithms.gd.gd import GradientDescent
 from algorithms.pso.np_pso import PSO
-from optimization_functions import Matya
+from research.optimization_functions import Matya
 
 cost_function = Matya(2)
 

@@ -12,17 +12,19 @@ Commit history:
 """
 
 from enum import Enum
+
+import numpy as np
 import tensorflow as tf
-from optimization_functions import OptimizationFunction
+
+from research.optimization_functions import OptimizationFunction
 from utility.benchmark import Benchmark
 from utility.convergence_visualizer import ConvergenceVisualizer
 from utility.log import Log
 from utility.report import Report
-import numpy as np
 
 
 # noinspection PyUnresolvedReferences
-class GPO:
+class GPODEP:
     """
     Gradient Population Optimizer. Uses a population of gradients to optimize a function.
     

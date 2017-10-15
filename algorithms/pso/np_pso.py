@@ -6,17 +6,19 @@ Description:    Particle Swarm Optimization written for NumPy.
 Commit history:
                 - 04/22/2017 - Initial version
 """
-
+import csv
 import inspect
+
 import numpy as np
-from optimization_functions import OptimizationFunction
+
+from research.optimization_functions import OptimizationFunction
 from utility.benchmark import Benchmark
 from utility.convergence_visualizer import ConvergenceVisualizer
 from utility.log import Log
 from utility.report import Report
 
 
-class N_PSO:
+class NPPSO:
     """
     Particle Swarm Optimization algorithm.
     """
@@ -156,6 +158,10 @@ class N_PSO:
         if self.plot:
             graph = ConvergenceVisualizer(self._function_class)
 
+        csv_table = open("Factors_Table.csv", "w")
+        csv_writer = csv.writer(csv_table, delimiter=',', lineterminator='\n')
+        csv_writer.writerow(['Iterations', 'Cognitive', 'Social'])
+
         iterative_scalar = 1
         # Iterate through the epochs
         for epoch in range(0, self.epochs):
@@ -198,6 +204,9 @@ class N_PSO:
             # Calculate the cognitive and social factors
             cognitive_factor = cognitive_scaled_matrix * (cognitive_matrix - particle_matrix)
             social_factor = social_scaled_matrix * (self._global_best_particle - particle_matrix)
+
+            # if (epoch + 1) % 10 == 0:
+            #     csv_writer.writerow([epoch + 1, np.mean(cognitive_factor), np.mean(social_factor)])
 
             # Decrease inertia linearly
             self.inertia -= self.inertia_step
